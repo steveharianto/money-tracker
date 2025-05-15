@@ -29,17 +29,14 @@ const TotalBalance = () => {
   }, []);
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-900">Current Balance</h2>
-        {loading ? (
-          <div className="animate-pulse h-8 w-36 bg-gray-200 rounded"></div>
-        ) : (
-          <p className="text-2xl font-bold text-gray-900">
-            Rp {totalBalance.toLocaleString('id-ID')}
-          </p>
-        )}
-      </div>
+    <div className="flex justify-center items-center">
+      {loading ? (
+        <div className="animate-pulse h-12 w-48 bg-gray-200 rounded"></div>
+      ) : (
+        <p className="text-4xl font-bold">
+          Rp {totalBalance.toLocaleString('id-ID')}
+        </p>
+      )}
     </div>
   );
 };

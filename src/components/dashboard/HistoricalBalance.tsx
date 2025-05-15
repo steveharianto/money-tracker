@@ -199,14 +199,16 @@ const HistoricalBalance = () => {
             
             // Remove this transaction as we've accounted for it
             sortedTransactions.splice(i, 1);
-            i--; // Adjust index since we removed an item
+            i--; // Adjust index after removing item
           }
         }
 
+        // Set the balance for this period
         period.balance = runningBalance;
       }
     }
 
+    // Update state with calculated historical balances
     setHistoricalBalances(periods);
   };
 
@@ -214,20 +216,16 @@ const HistoricalBalance = () => {
     setSelectedTimeRange(e.target.value as TimeRangeOption);
   };
 
-  if (loading) {
-    return <div className="animate-pulse space-y-4">
-      <div className="h-64 bg-gray-200 rounded w-full"></div>
-    </div>;
-  }
+  // Calculate the chart height dynamically, but with a minimum size
+  const chartHeight = Math.max(300, Math.min(window.innerHeight * 0.4, 400));
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Historical Balance</h2>
+    <div>
+      <div className="flex justify-end mb-4">
         <select
           value={selectedTimeRange}
           onChange={handleTimeRangeChange}
-          className="block border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          className="block w-28 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
         >
           {Object.values(TIME_RANGES).map((range) => (
             <option key={range.value} value={range.value}>
@@ -237,42 +235,54 @@ const HistoricalBalance = () => {
         </select>
       </div>
 
-      <div className="h-80">
-        {historicalBalances.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-gray-500">No historical data available</p>
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={historicalBalances}
-              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="formattedDate" 
-                padding={{ left: 20, right: 20 }}
-              />
-              <YAxis 
-                tickFormatter={(value) => `Rp ${value.toLocaleString('id-ID')}`}
-              />
-              <Tooltip 
-                formatter={(value) => [`Rp ${Number(value).toLocaleString('id-ID')}`, 'Balance']}
-                labelFormatter={(label) => `Balance on ${label}`}
-              />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="balance" 
-                name="Balance" 
-                stroke="#8884d8" 
-                activeDot={{ r: 8 }}
-                strokeWidth={2}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        )}
-      </div>
+      {loading ? (
+        <div className="animate-pulse w-full h-64 bg-gray-200 rounded"></div>
+      ) : (
+        <>
+          {historicalBalances.length === 0 ? (
+            <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
+              <p className="text-gray-500">No historical data available</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={chartHeight}>
+              <LineChart
+                data={historicalBalances}
+                margin={{
+                  top: 10,
+                  right: 30,
+                  left: 20,
+                  bottom: 30,
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="formattedDate"
+                  tick={{ fontSize: 12 }}
+                  tickMargin={10}
+                />
+                <YAxis
+                  tickFormatter={(value) => `Rp ${(value / 1000).toFixed(0)}k`}
+                  tick={{ fontSize: 12 }}
+                />
+                <Tooltip
+                  formatter={(value: number) => [`Rp ${value.toLocaleString('id-ID')}`, 'Balance']}
+                  labelFormatter={(label) => `Date: ${label}`}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="balance"
+                  name="Balance"
+                  stroke="#6366f1"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </>
+      )}
     </div>
   );
 };

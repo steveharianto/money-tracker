@@ -3,11 +3,49 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase, type Wallet, type Category } from '@/lib/supabase';
 
+// Pre-fetch wallet and category data to reduce form load time
+let cachedWallets: Wallet[] | null = null;
+let cachedCategories: Category[] | null = null;
+
+const fetchWalletsData = async () => {
+  if (cachedWallets) return cachedWallets;
+  
+  try {
+    const { data, error } = await supabase.from('wallets').select('*');
+    if (error) throw error;
+    cachedWallets = data || [];
+    return cachedWallets;
+  } catch (error) {
+    console.error('Error pre-fetching wallets:', error);
+    return [];
+  }
+};
+
+const fetchCategoriesData = async () => {
+  if (cachedCategories) return cachedCategories;
+  
+  try {
+    const { data, error } = await supabase.from('categories').select('*').order('name');
+    if (error) throw error;
+    cachedCategories = data || [];
+    return cachedCategories;
+  } catch (error) {
+    console.error('Error pre-fetching categories:', error);
+    return [];
+  }
+};
+
+// Start pre-fetching as soon as possible
+if (typeof window !== 'undefined') {
+  fetchWalletsData();
+  fetchCategoriesData();
+}
+
 const AddTransactionForm = () => {
   const amountInputRef = useRef<HTMLInputElement>(null);
-  const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [wallets, setWallets] = useState<Wallet[]>(cachedWallets || []);
+  const [categories, setCategories] = useState<Category[]>(cachedCategories || []);
+  const [loading, setLoading] = useState(!cachedWallets || !cachedCategories);
   const [categoryInput, setCategoryInput] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -22,18 +60,41 @@ const AddTransactionForm = () => {
     date: new Date().toISOString().split('T')[0]
   });
 
-  // Focus amount input on mount
+  // Focus amount input on mount - using a small timeout to ensure the DOM is ready
   useEffect(() => {
-    if (amountInputRef.current) {
-      amountInputRef.current.focus();
-    }
+    const focusTimer = setTimeout(() => {
+      if (amountInputRef.current) {
+        amountInputRef.current.focus();
+      }
+    }, 50);
+    
+    return () => clearTimeout(focusTimer);
   }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
-        await Promise.all([fetchWallets(), fetchCategories()]);
+        if (!cachedWallets || !cachedCategories) {
+          setLoading(true);
+          const [walletsData, categoriesData] = await Promise.all([
+            fetchWalletsData(),
+            fetchCategoriesData()
+          ]);
+          
+          setWallets(walletsData);
+          setCategories(categoriesData);
+          
+          if (walletsData.length > 0) {
+            setFormData(prev => ({ ...prev, wallet_id: walletsData[0].id }));
+          }
+          
+          if (categoriesData.length > 0) {
+            const expenseCategories = categoriesData.filter(c => c.type === 'expense');
+            if (expenseCategories.length > 0) {
+              setFormData(prev => ({ ...prev, category_id: expenseCategories[0].id }));
+            }
+          }
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -56,31 +117,6 @@ const AddTransactionForm = () => {
       setFilteredCategories(categories.filter(cat => cat.type === formData.type));
     }
   }, [categoryInput, categories, formData.type]);
-
-  const fetchWallets = async () => {
-    const { data, error } = await supabase
-      .from('wallets')
-      .select('*');
-    
-    if (error) throw error;
-    setWallets(data || []);
-    if (data && data.length > 0) {
-      setFormData(prev => ({ ...prev, wallet_id: data[0].id }));
-    }
-  };
-
-  const fetchCategories = async () => {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('name');
-    
-    if (error) throw error;
-    setCategories(data || []);
-    if (data && data.length > 0) {
-      setFormData(prev => ({ ...prev, category_id: data[0].id }));
-    }
-  };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Remove non-numeric characters
@@ -141,7 +177,10 @@ const AddTransactionForm = () => {
       
       if (data && data.length > 0) {
         const newCategory = data[0];
-        setCategories([...categories, newCategory]);
+        const updatedCategories = [...categories, newCategory];
+        setCategories(updatedCategories);
+        cachedCategories = updatedCategories;
+        
         setFormData({
           ...formData,
           category_id: newCategory.id
@@ -204,6 +243,13 @@ const AddTransactionForm = () => {
           .eq('id', wallet.id);
         
         if (walletError) throw walletError;
+        
+        // Update cached wallet data
+        const updatedWallets = wallets.map(w => 
+          w.id === wallet.id ? {...w, balance: newBalance} : w
+        );
+        setWallets(updatedWallets);
+        cachedWallets = updatedWallets;
         
         // Record balance history
         const { data: walletsData, error: walletsError } = await supabase
