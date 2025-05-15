@@ -30,12 +30,12 @@ const TotalBalance = () => {
 
   return (
     <div className="bg-white shadow rounded-lg p-6">
-      <h2 className="text-sm font-medium text-gray-500">TOTAL BALANCE</h2>
-      <div className="mt-2">
+      <div className="flex justify-between items-center">
+        <h2 className="text-lg font-semibold text-gray-900">Current Balance</h2>
         {loading ? (
-          <div className="animate-pulse h-10 w-36 bg-gray-200 rounded"></div>
+          <div className="animate-pulse h-8 w-36 bg-gray-200 rounded"></div>
         ) : (
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-2xl font-bold text-gray-900">
             Rp {totalBalance.toLocaleString('id-ID')}
           </p>
         )}

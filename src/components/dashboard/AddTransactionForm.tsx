@@ -131,6 +131,32 @@ const AddTransactionForm = () => {
           .eq('id', wallet.id);
         
         if (walletError) throw walletError;
+        
+        // Record balance history
+        // First, get total balance across all wallets
+        const { data: walletsData, error: walletsError } = await supabase
+          .from('wallets')
+          .select('balance');
+          
+        if (walletsError) throw walletsError;
+        
+        const totalBalance = walletsData?.reduce((sum, wallet) => sum + wallet.balance, 0) || 0;
+        
+        // Insert balance history record
+        const timestamp = new Date().toISOString();
+        const { error: historyError } = await supabase
+          .from('balance_history')
+          .insert([
+            {
+              total_balance: totalBalance,
+              timestamp: timestamp
+            }
+          ]);
+        
+        if (historyError) {
+          console.error('Error recording balance history:', historyError);
+          // Continue even if balance history recording fails
+        }
       }
       
       // Reset form

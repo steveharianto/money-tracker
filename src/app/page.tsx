@@ -2,13 +2,17 @@ import TotalBalance from '@/components/dashboard/TotalBalance';
 import WalletsList from '@/components/dashboard/WalletsList';
 import AddTransactionForm from '@/components/dashboard/AddTransactionForm';
 import DashboardCharts from '@/components/dashboard/DashboardCharts';
+import HistoricalBalance from '@/components/dashboard/HistoricalBalance';
 
 export default function Home() {
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
-          <TotalBalance />
+          <HistoricalBalance />
+          <div className="mt-6">
+            <TotalBalance />
+          </div>
           <div className="mt-6">
             <DashboardCharts />
           </div>

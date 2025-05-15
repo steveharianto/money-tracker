@@ -27,4 +27,11 @@ export type Transaction = {
   type: 'income' | 'expense';
   date: string;
   created_at: string;
+};
+
+export type BalanceHistory = {
+  id: string;
+  total_balance: number;
+  timestamp: string;
+  created_at: string;
 }; 

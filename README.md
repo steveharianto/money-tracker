@@ -47,7 +47,12 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 4. Set up Supabase:
 
-a. Create the following tables in your Supabase project:
+a. Create the database tables:
+   - You can copy the contents of the `setup.sql` file provided in this repository
+   - In Supabase, go to SQL Editor > New Query
+   - Paste the SQL and execute it to create all required tables and some default categories
+
+Alternatively, you can manually create the following tables:
 
 **wallets**
 - id (uuid, primary key)
@@ -70,6 +75,12 @@ a. Create the following tables in your Supabase project:
 - wallet_id (uuid, foreign key to wallets.id)
 - date (date)
 - created_at (timestamp with timezone)
+
+**balance_history**
+- id (uuid, primary key)
+- total_balance (float)
+- timestamp (timestamp with timezone)
+- created_at (timestamp with timezone, default: now())
 
 b. Enable Email Authentication:
 - Go to Authentication > Providers
