@@ -2,15 +2,23 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { LogOut } from 'lucide-react';
 
 const ClientNavigation = () => {
   const pathname = usePathname();
+  const { isAuthenticated, logout } = useAuth();
   
   const navItems = [
     { name: 'Dashboard', href: '/' },
     { name: 'Wallets', href: '/wallets' },
     { name: 'Transactions', href: '/transactions' },
   ];
+
+  // Don't render navigation if not authenticated or on login/setup pages
+  if (!isAuthenticated || pathname === '/login' || pathname === '/setup') {
+    return null;
+  }
 
   return (
     <nav className="bg-white border-b">
@@ -37,6 +45,15 @@ const ClientNavigation = () => {
                 </Link>
               ))}
             </div>
+          </div>
+          <div className="flex items-center">
+            <button
+              onClick={() => logout()}
+              className="ml-3 inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+            >
+              <LogOut className="h-4 w-4 mr-1" />
+              Logout
+            </button>
           </div>
         </div>
       </div>

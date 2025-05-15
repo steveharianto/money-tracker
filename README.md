@@ -40,13 +40,14 @@ yarn install
 Create a `.env.local` file in the root directory with the following variables:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 4. Set up Supabase:
 
-Create the following tables in your Supabase project:
+a. Create the following tables in your Supabase project:
 
 **wallets**
 - id (uuid, primary key)
@@ -70,6 +71,11 @@ Create the following tables in your Supabase project:
 - date (date)
 - created_at (timestamp with timezone)
 
+b. Enable Email Authentication:
+- Go to Authentication > Providers
+- Enable Email provider
+- Configure any additional settings as needed (password length, etc.)
+
 5. Run the development server:
 
 ```bash
@@ -78,7 +84,16 @@ npm run dev
 yarn dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
+6. Initial Setup:
+
+- Open [http://localhost:3000/setup](http://localhost:3000/setup) in your browser
+- Create an admin user account
+- You'll be redirected to the login page once the account is created
+
+7. Login and start using your Money Tracker:
+- Open [http://localhost:3000/login](http://localhost:3000/login) with your browser
+- Enter your credentials
+- Start tracking your finances!
 
 ## Technologies Used
 
