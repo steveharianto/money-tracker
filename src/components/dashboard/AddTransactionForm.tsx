@@ -1,13 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase, type Wallet, type Category } from '@/lib/supabase';
 
 const AddTransactionForm = () => {
+  const amountInputRef = useRef<HTMLInputElement>(null);
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newCategory, setNewCategory] = useState('');
+  const [categoryInput, setCategoryInput] = useState('');
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
   
   const [formData, setFormData] = useState({
     amount: '',
@@ -17,6 +21,13 @@ const AddTransactionForm = () => {
     wallet_id: '',
     date: new Date().toISOString().split('T')[0]
   });
+
+  // Focus amount input on mount
+  useEffect(() => {
+    if (amountInputRef.current) {
+      amountInputRef.current.focus();
+    }
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -32,6 +43,19 @@ const AddTransactionForm = () => {
 
     fetchData();
   }, []);
+
+  // Filter categories based on input and transaction type
+  useEffect(() => {
+    if (categoryInput) {
+      const filtered = categories.filter(cat => 
+        cat.type === formData.type && 
+        cat.name.toLowerCase().includes(categoryInput.toLowerCase())
+      );
+      setFilteredCategories(filtered);
+    } else {
+      setFilteredCategories(categories.filter(cat => cat.type === formData.type));
+    }
+  }, [categoryInput, categories, formData.type]);
 
   const fetchWallets = async () => {
     const { data, error } = await supabase
@@ -58,6 +82,17 @@ const AddTransactionForm = () => {
     }
   };
 
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Remove non-numeric characters
+    const value = e.target.value.replace(/[^\d]/g, '');
+    
+    // Update form data
+    setFormData({
+      ...formData,
+      amount: value
+    });
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData({
@@ -66,29 +101,67 @@ const AddTransactionForm = () => {
     });
   };
 
+  const handleTypeChange = (type: 'expense' | 'income') => {
+    setFormData({
+      ...formData,
+      type,
+      // Reset category when changing type
+      category_id: categories.find(c => c.type === type)?.id || ''
+    });
+  };
+
+  const handleWalletSelect = (walletId: string) => {
+    setFormData({
+      ...formData,
+      wallet_id: walletId
+    });
+  };
+
+  const handleCategorySelect = (categoryId: string) => {
+    setFormData({
+      ...formData,
+      category_id: categoryId
+    });
+    setCategoryInput('');
+    setShowCategoryDropdown(false);
+  };
+
   const handleAddCategory = async () => {
-    if (!newCategory.trim()) return;
+    if (!categoryInput.trim()) return;
     
     try {
       const { data, error } = await supabase
         .from('categories')
         .insert([
-          { name: newCategory.trim(), type: formData.type }
+          { name: categoryInput.trim(), type: formData.type }
         ])
         .select();
       
       if (error) throw error;
       
       if (data && data.length > 0) {
-        setCategories([...categories, data[0]]);
+        const newCategory = data[0];
+        setCategories([...categories, newCategory]);
         setFormData({
           ...formData,
-          category_id: data[0].id
+          category_id: newCategory.id
         });
-        setNewCategory('');
+        setCategoryInput('');
+        setShowCategoryDropdown(false);
       }
     } catch (error) {
       console.error('Error adding category:', error);
+    }
+  };
+
+  const handleCategoryKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (filteredCategories.length > 0) {
+        handleCategorySelect(filteredCategories[0].id);
+      } else if (categoryInput.trim()) {
+        handleAddCategory();
+      }
     }
   };
 
@@ -133,7 +206,6 @@ const AddTransactionForm = () => {
         if (walletError) throw walletError;
         
         // Record balance history
-        // First, get total balance across all wallets
         const { data: walletsData, error: walletsError } = await supabase
           .from('wallets')
           .select('balance');
@@ -155,7 +227,6 @@ const AddTransactionForm = () => {
         
         if (historyError) {
           console.error('Error recording balance history:', historyError);
-          // Continue even if balance history recording fails
         }
       }
       
@@ -169,7 +240,19 @@ const AddTransactionForm = () => {
         date: new Date().toISOString().split('T')[0]
       });
       
-      alert('Transaction added successfully!');
+      // Focus back on amount input for quick entry of multiple transactions
+      if (amountInputRef.current) {
+        amountInputRef.current.focus();
+      }
+
+      // Success notification
+      const notification = document.createElement('div');
+      notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg';
+      notification.textContent = 'Transaction added successfully!';
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
     } catch (error) {
       console.error('Error adding transaction:', error);
       alert('Failed to add transaction. Please try again.');
@@ -184,147 +267,193 @@ const AddTransactionForm = () => {
     </div>;
   }
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Transaction Type</label>
-        <div className="mt-1 flex space-x-4">
-          <label className="inline-flex items-center">
-            <input
-              type="radio"
-              name="type"
-              value="expense"
-              checked={formData.type === 'expense'}
-              onChange={handleInputChange}
-              className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
-            />
-            <span className="ml-2 text-sm text-gray-700">Expense</span>
-          </label>
-          <label className="inline-flex items-center">
-            <input
-              type="radio"
-              name="type"
-              value="income"
-              checked={formData.type === 'income'}
-              onChange={handleInputChange}
-              className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
-            />
-            <span className="ml-2 text-sm text-gray-700">Income</span>
-          </label>
-        </div>
-      </div>
+  // Get the selected category name for display
+  const selectedCategory = categories.find(c => c.id === formData.category_id);
+  const selectedWallet = wallets.find(w => w.id === formData.wallet_id);
 
+  return (
+    <form 
+      onSubmit={handleSubmit} 
+      className={`space-y-4 transition-colors duration-300 ${
+        formData.type === 'expense' ? 'text-red-800' : 'text-green-800'
+      }`}
+    >
+      {/* Amount Input - First field, auto-focused */}
       <div>
-        <label htmlFor="amount" className="block text-sm font-medium text-gray-700">Amount</label>
+        <label htmlFor="amount" className="block text-sm font-medium">Amount</label>
         <div className="mt-1 relative rounded-md shadow-sm">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <span className="text-gray-500 sm:text-sm">Rp</span>
           </div>
           <input
-            type="number"
+            ref={amountInputRef}
+            type="text"
             id="amount"
             name="amount"
-            value={formData.amount}
-            onChange={handleInputChange}
-            className="block w-full pl-10 pr-12 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            value={formData.amount ? parseInt(formData.amount).toLocaleString('id-ID') : ''}
+            onChange={handleAmountChange}
+            className={`block w-full pl-10 pr-12 border rounded-md py-2 px-3 focus:outline-none focus:ring-2 ${
+              formData.type === 'expense' 
+                ? 'focus:ring-red-500 focus:border-red-500' 
+                : 'focus:ring-green-500 focus:border-green-500'
+            }`}
             placeholder="0"
-            step="1"
             required
           />
         </div>
       </div>
 
+      {/* Transaction Type - Second field with animated selection */}
       <div>
-        <label htmlFor="wallet_id" className="block text-sm font-medium text-gray-700">Wallet</label>
-        <select
-          id="wallet_id"
-          name="wallet_id"
-          value={formData.wallet_id}
-          onChange={handleInputChange}
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          required
-        >
-          {wallets.length === 0 ? (
-            <option value="">No wallets available</option>
-          ) : (
-            wallets.map(wallet => (
-              <option key={wallet.id} value={wallet.id}>{wallet.name}</option>
-            ))
-          )}
-        </select>
-      </div>
-
-      <div>
-        <label htmlFor="category_id" className="block text-sm font-medium text-gray-700">Category</label>
-        <div className="mt-1 flex space-x-2">
-          <select
-            id="category_id"
-            name="category_id"
-            value={formData.category_id}
-            onChange={handleInputChange}
-            className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            {categories
-              .filter(cat => cat.type === formData.type)
-              .map(category => (
-                <option key={category.id} value={category.id}>{category.name}</option>
-              ))}
-            {categories.filter(cat => cat.type === formData.type).length === 0 && (
-              <option value="">No categories available</option>
-            )}
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Add New Category</label>
-        <div className="mt-1 flex space-x-2">
-          <input
-            type="text"
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Category name"
-          />
+        <label className="block text-sm font-medium">Transaction Type</label>
+        <div className="mt-1 grid grid-cols-2 gap-2">
           <button
             type="button"
-            onClick={handleAddCategory}
-            className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+            onClick={() => handleTypeChange('expense')}
+            className={`py-2 px-4 rounded-lg text-center transition-colors duration-300 ${
+              formData.type === 'expense'
+                ? 'bg-red-100 border-2 border-red-500 text-red-800 font-semibold'
+                : 'bg-gray-100 border border-gray-300 text-gray-600'
+            }`}
           >
-            Add
+            Expense
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTypeChange('income')}
+            className={`py-2 px-4 rounded-lg text-center transition-colors duration-300 ${
+              formData.type === 'income'
+                ? 'bg-green-100 border-2 border-green-500 text-green-800 font-semibold'
+                : 'bg-gray-100 border border-gray-300 text-gray-600'
+            }`}
+          >
+            Income
           </button>
         </div>
       </div>
 
+      {/* Wallet Selection - Toggleable boxes */}
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
+        <label className="block text-sm font-medium">Wallet</label>
+        <div className="mt-1 grid grid-cols-2 gap-2">
+          {wallets.map(wallet => (
+            <button
+              key={wallet.id}
+              type="button"
+              onClick={() => handleWalletSelect(wallet.id)}
+              className={`py-2 px-4 text-left rounded-lg transition-colors duration-200 ${
+                formData.wallet_id === wallet.id
+                  ? formData.type === 'expense'
+                    ? 'bg-red-100 border-2 border-red-500'
+                    : 'bg-green-100 border-2 border-green-500'
+                  : 'bg-gray-100 border border-gray-300'
+              }`}
+            >
+              <span className="block font-medium truncate">{wallet.name}</span>
+              <span className="block text-sm truncate">Rp {wallet.balance.toLocaleString('id-ID')}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Category Selection - Autocomplete with dropdown */}
+      <div>
+        <label className="block text-sm font-medium">Category</label>
+        <div className="mt-1 relative">
+          <input
+            type="text"
+            value={categoryInput}
+            onChange={(e) => {
+              setCategoryInput(e.target.value);
+              setShowCategoryDropdown(true);
+            }}
+            onFocus={() => setShowCategoryDropdown(true)}
+            onBlur={() => setTimeout(() => setShowCategoryDropdown(false), 200)}
+            onKeyDown={handleCategoryKeyDown}
+            placeholder={selectedCategory?.name || "Select or create category"}
+            className={`block w-full border rounded-md py-2 px-3 focus:outline-none focus:ring-2 ${
+              formData.type === 'expense' 
+                ? 'focus:ring-red-500 focus:border-red-500' 
+                : 'focus:ring-green-500 focus:border-green-500'
+            }`}
+          />
+          
+          {showCategoryDropdown && (
+            <div className="absolute z-10 mt-1 w-full bg-white rounded-md shadow-lg max-h-60 overflow-auto">
+              <ul className="py-1">
+                {filteredCategories.map(category => (
+                  <li 
+                    key={category.id}
+                    onClick={() => handleCategorySelect(category.id)}
+                    className="px-3 py-2 cursor-pointer hover:bg-gray-100"
+                  >
+                    {category.name}
+                  </li>
+                ))}
+                {categoryInput && filteredCategories.length === 0 && (
+                  <li 
+                    onClick={handleAddCategory}
+                    className={`px-3 py-2 cursor-pointer font-medium ${
+                      formData.type === 'expense' ? 'text-red-600' : 'text-green-600'
+                    }`}
+                  >
+                    Create "{categoryInput}"
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Description */}
+      <div>
+        <label htmlFor="description" className="block text-sm font-medium">Description</label>
         <textarea
           id="description"
           name="description"
           value={formData.description}
           onChange={handleInputChange}
           rows={2}
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          className={`mt-1 block w-full border rounded-md py-2 px-3 focus:outline-none focus:ring-2 ${
+            formData.type === 'expense' 
+              ? 'focus:ring-red-500 focus:border-red-500' 
+              : 'focus:ring-green-500 focus:border-green-500'
+          }`}
         />
       </div>
 
+      {/* Date Selection */}
       <div>
-        <label htmlFor="date" className="block text-sm font-medium text-gray-700">Date</label>
-        <input
-          type="date"
-          id="date"
-          name="date"
-          value={formData.date}
-          onChange={handleInputChange}
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          required
-        />
+        <label htmlFor="date" className="block text-sm font-medium">Date</label>
+        <div className="mt-1 relative">
+          <input
+            type="date"
+            id="date"
+            name="date"
+            value={formData.date}
+            onChange={handleInputChange}
+            onFocus={() => setShowDatePicker(true)}
+            onBlur={() => setShowDatePicker(false)}
+            className={`block w-full border rounded-md py-2 px-3 focus:outline-none focus:ring-2 ${
+              formData.type === 'expense' 
+                ? 'focus:ring-red-500 focus:border-red-500' 
+                : 'focus:ring-green-500 focus:border-green-500'
+            }`}
+            required
+          />
+        </div>
       </div>
 
+      {/* Submit Button */}
       <div>
         <button
           type="submit"
-          className="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          className={`w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${
+            formData.type === 'expense'
+              ? 'bg-red-600 hover:bg-red-700'
+              : 'bg-green-600 hover:bg-green-700'
+          }`}
         >
           {formData.type === 'expense' ? 'Add Expense' : 'Add Income'}
         </button>
