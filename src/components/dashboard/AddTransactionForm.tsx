@@ -315,7 +315,8 @@ const AddTransactionForm = () => {
 
   // Get the selected category name for display
   const selectedCategory = categories.find(c => c.id === formData.category_id);
-  const selectedWallet = wallets.find(w => w.id === formData.wallet_id);
+  // Commented out unused variable 
+  // const selectedWallet = wallets.find(w => w.id === formData.wallet_id);
 
   return (
     <form 
@@ -443,7 +444,7 @@ const AddTransactionForm = () => {
                       formData.type === 'expense' ? 'text-red-600' : 'text-green-600'
                     }`}
                   >
-                    Create "{categoryInput}"
+                    Create &quot;{categoryInput}&quot;
                   </li>
                 )}
               </ul>
@@ -479,8 +480,6 @@ const AddTransactionForm = () => {
             name="date"
             value={formData.date}
             onChange={handleInputChange}
-            onFocus={() => setShowDatePicker(true)}
-            onBlur={() => setShowDatePicker(false)}
             className={`block w-full border rounded-md py-2 px-3 focus:outline-none focus:ring-2 ${
               formData.type === 'expense' 
                 ? 'focus:ring-red-500 focus:border-red-500' 

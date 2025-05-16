@@ -7,7 +7,7 @@ import AddTransactionForm from '@/components/dashboard/AddTransactionForm';
 import DashboardCharts from '@/components/dashboard/DashboardCharts';
 import HistoricalBalance from '@/components/dashboard/HistoricalBalance';
 import DashboardWallets from '@/components/dashboard/DashboardWallets';
-import { PlusCircle, Wallet, TrendingUp, Activity, Plus } from 'lucide-react';
+import { Wallet, TrendingUp, Activity, Plus } from 'lucide-react';
 
 export default function Home() {
   const [showTransactionForm, setShowTransactionForm] = useState(false);

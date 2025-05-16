@@ -2,12 +2,27 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { supabase, type Wallet, type Transaction } from '@/lib/supabase';
+import { supabase, type Wallet } from '@/lib/supabase';
 import { PlusCircle, ChevronRight, ArrowUpRight, ArrowDownLeft, Plus } from 'lucide-react';
+
+// Extended transaction type that includes joined data
+type TransactionWithRelations = {
+  id: string;
+  amount: number;
+  description: string;
+  category_id: string;
+  wallet_id: string;
+  type: 'income' | 'expense';
+  date: string;
+  created_at: string;
+  // Joined data
+  categories?: { name: string };
+  wallets?: { name: string };
+};
 
 const DashboardWallets = () => {
   const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<TransactionWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -140,10 +155,10 @@ const DashboardWallets = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
-                    {transaction.description || (transaction as any).categories?.name || 'Unknown'}
+                    {transaction.description || (transaction.categories as { name: string })?.name || 'Unknown'}
                   </p>
                   <p className="text-xs text-gray-500 truncate">
-                    {new Date(transaction.date).toLocaleDateString()} • {(transaction as any).wallets?.name}
+                    {new Date(transaction.date).toLocaleDateString()} • {(transaction.wallets as { name: string })?.name}
                   </p>
                 </div>
                 <p className={`text-sm font-medium ${

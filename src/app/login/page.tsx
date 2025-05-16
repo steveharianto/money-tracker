@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import Link from 'next/link';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');

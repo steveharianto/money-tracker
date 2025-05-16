@@ -32,7 +32,7 @@ export default function SetupPage() {
     }
     
     try {
-      const { data, error } = await createAdminUser(email, password);
+      const { error } = await createAdminUser(email, password);
       
       if (error) {
         setError(error.message || 'Failed to create admin user.');
