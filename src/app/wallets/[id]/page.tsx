@@ -1,20 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase, type Wallet, type Transaction } from '@/lib/supabase';
 
-interface PageParams {
-  id: string;
-}
-
-export default function WalletDetails({ 
-  params 
-}: { 
-  params: PageParams 
-}) {
+export default function WalletDetails() {
   const router = useRouter();
+  const params = useParams();
+  const walletId = params.id as string;
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,7 +19,7 @@ export default function WalletDetails({
     const { data, error } = await supabase
       .from('wallets')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', walletId)
       .single();
 
     if (error) {
@@ -35,13 +29,13 @@ export default function WalletDetails({
 
     setWallet(data);
     setWalletName(data.name);
-  }, [params.id]);
+  }, [walletId]);
 
   const fetchWalletTransactions = useCallback(async () => {
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
-      .eq('wallet_id', params.id)
+      .eq('wallet_id', walletId)
       .order('date', { ascending: false })
       .limit(10);
 
@@ -51,7 +45,7 @@ export default function WalletDetails({
     }
 
     setTransactions(data || []);
-  }, [params.id]);
+  }, [walletId]);
 
   useEffect(() => {
     const fetchWalletData = async () => {
@@ -69,7 +63,7 @@ export default function WalletDetails({
     };
 
     fetchWalletData();
-  }, [params.id, fetchWallet, fetchWalletTransactions]);
+  }, [fetchWallet, fetchWalletTransactions]);
 
   const handleSaveWallet = async () => {
     if (!wallet || !walletName.trim()) return;
