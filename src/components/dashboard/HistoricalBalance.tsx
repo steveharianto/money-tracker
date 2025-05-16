@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase, type Transaction, type BalanceHistory } from '@/lib/supabase';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { startOfDay, startOfMonth, startOfHour, endOfDay, endOfMonth, endOfHour, format, subMonths, subDays, subHours, parseISO } from 'date-fns';
+import { startOfDay, startOfMonth, startOfHour, endOfDay, endOfMonth, endOfHour, format, subMonths, subDays, subHours } from 'date-fns';
 
 type TimeRangeOption = 'day' | 'hour' | 'month';
 type TimeRange = {
@@ -61,74 +61,20 @@ const HistoricalBalance = () => {
   const [currentBalance, setCurrentBalance] = useState(0);
   const [chartHeight, setChartHeight] = useState(300);
 
+  // Calculate the chart height dynamically only on client-side
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setChartHeight(Math.max(300, Math.min(window.innerHeight * 0.4, 400)));
+    }
+  }, []);
+
   useEffect(() => {
     fetchTotalBalance();
     fetchBalanceHistory();
     fetchTransactions();
   }, []);
 
-  useEffect(() => {
-    if ((balanceHistory.length > 0 || transactions.length > 0) && !loading) {
-      calculateHistoricalBalances();
-    }
-  }, [transactions, balanceHistory, selectedTimeRange, loading]);
-
-  const fetchTotalBalance = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('wallets')
-        .select('balance');
-      
-      if (error) throw error;
-      
-      const total = data?.reduce((sum, wallet) => sum + wallet.balance, 0) || 0;
-      setCurrentBalance(total);
-    } catch (error) {
-      console.error('Error fetching total balance:', error);
-    }
-  };
-
-  const fetchBalanceHistory = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('balance_history')
-        .select('*')
-        .order('timestamp', { ascending: true });
-      
-      if (error) {
-        // If the table doesn't exist yet, this will fail gracefully
-        console.error('Error fetching balance history:', error);
-        return;
-      }
-      
-      setBalanceHistory(data || []);
-    } catch (error) {
-      console.error('Error fetching balance history:', error);
-    }
-  };
-
-  const fetchTransactions = async () => {
-    try {
-      setLoading(true);
-
-      // For simplicity, get all transactions
-      // In a production app, you'd want to paginate or limit this
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .order('date', { ascending: true });
-      
-      if (error) throw error;
-      
-      setTransactions(data || []);
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const calculateHistoricalBalances = () => {
+  const calculateHistoricalBalances = useCallback(() => {
     const timeRange = TIME_RANGES[selectedTimeRange];
     const now = new Date();
     const periods: BalancePoint[] = [];
@@ -137,7 +83,8 @@ const HistoricalBalance = () => {
     for (let i = 0; i < timeRange.periods; i++) {
       const periodDate = timeRange.subPeriodFn(now, i);
       const periodStart = timeRange.periodFn(periodDate);
-      const periodEnd = timeRange.endPeriodFn(periodDate);
+      // We don't actually use periodEnd in this loop
+      // const periodEnd = timeRange.endPeriodFn(periodDate);
       
       periods.unshift({
         date: format(periodStart, 'yyyy-MM-dd HH:mm:ss'),
@@ -211,18 +158,72 @@ const HistoricalBalance = () => {
 
     // Update state with calculated historical balances
     setHistoricalBalances(periods);
+  }, [selectedTimeRange, transactions, balanceHistory, currentBalance]);
+
+  useEffect(() => {
+    if ((balanceHistory.length > 0 || transactions.length > 0) && !loading) {
+      calculateHistoricalBalances();
+    }
+  }, [transactions, balanceHistory, selectedTimeRange, loading, calculateHistoricalBalances]);
+
+  const fetchTotalBalance = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('wallets')
+        .select('balance');
+      
+      if (error) throw error;
+      
+      const total = data?.reduce((sum, wallet) => sum + wallet.balance, 0) || 0;
+      setCurrentBalance(total);
+    } catch (error) {
+      console.error('Error fetching total balance:', error);
+    }
+  };
+
+  const fetchBalanceHistory = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('balance_history')
+        .select('*')
+        .order('timestamp', { ascending: true });
+      
+      if (error) {
+        // If the table doesn't exist yet, this will fail gracefully
+        console.error('Error fetching balance history:', error);
+        return;
+      }
+      
+      setBalanceHistory(data || []);
+    } catch (error) {
+      console.error('Error fetching balance history:', error);
+    }
+  };
+
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true);
+
+      // For simplicity, get all transactions
+      // In a production app, you'd want to paginate or limit this
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .order('date', { ascending: true });
+      
+      if (error) throw error;
+      
+      setTransactions(data || []);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleTimeRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedTimeRange(e.target.value as TimeRangeOption);
   };
-
-  // Use a fixed height initially, and calculate dynamically only on client-side
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setChartHeight(Math.max(300, Math.min(window.innerHeight * 0.4, 400)));
-    }
-  }, []);
 
   return (
     <div>

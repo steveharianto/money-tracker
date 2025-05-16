@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase, type Transaction, type Category, type Wallet } from '@/lib/supabase';
-import { Edit, Trash } from 'lucide-react';
+import { Trash } from 'lucide-react';
 
 const TransactionsList = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -17,11 +17,7 @@ const TransactionsList = () => {
     categoryId: 'all'
   });
 
-  useEffect(() => {
-    fetchData();
-  }, [filter]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       await Promise.all([
@@ -34,7 +30,11 @@ const TransactionsList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);  // Empty dependency array since fetchTransactions, fetchCategories, and fetchWallets are defined inside the component
+
+  useEffect(() => {
+    fetchData();
+  }, [filter, fetchData]);
 
   const fetchTransactions = async () => {
     let query = supabase

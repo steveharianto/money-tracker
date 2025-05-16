@@ -48,7 +48,6 @@ const AddTransactionForm = () => {
   const [loading, setLoading] = useState(!cachedWallets || !cachedCategories);
   const [categoryInput, setCategoryInput] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
   
   const [formData, setFormData] = useState({

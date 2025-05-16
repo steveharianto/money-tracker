@@ -1,5 +1,4 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { type Session } from '@supabase/supabase-js';
 
 export const supabaseClient = createClientComponentClient();
 

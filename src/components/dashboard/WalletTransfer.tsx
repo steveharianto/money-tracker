@@ -28,7 +28,7 @@ const WalletTransfer = () => {
         toWalletId: wallets.length > 1 ? wallets[1].id : wallets[0].id
       }));
     }
-  }, [wallets]);
+  }, [wallets, formData.fromWalletId]);
 
   const fetchWallets = async () => {
     try {
