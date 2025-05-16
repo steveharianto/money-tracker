@@ -30,7 +30,7 @@ const TransactionsList = () => {
     } finally {
       setLoading(false);
     }
-  }, []);  // Empty dependency array since fetchTransactions, fetchCategories, and fetchWallets are defined inside the component
+  }, [filter]);
 
   useEffect(() => {
     fetchData();

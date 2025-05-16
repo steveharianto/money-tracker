@@ -1,17 +1,55 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase, type Wallet, type Transaction } from '@/lib/supabase';
 
-export default function WalletDetails({ params }: { params: { id: string } }) {
+interface WalletDetailsProps {
+  params: {
+    id: string;
+  }
+}
+
+export default function WalletDetails({ params }: WalletDetailsProps) {
   const router = useRouter();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [walletName, setWalletName] = useState('');
+
+  const fetchWallet = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('wallets')
+      .select('*')
+      .eq('id', params.id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching wallet:', error);
+      return;
+    }
+
+    setWallet(data);
+    setWalletName(data.name);
+  }, [params.id]);
+
+  const fetchWalletTransactions = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('wallet_id', params.id)
+      .order('date', { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error('Error fetching transactions:', error);
+      return;
+    }
+
+    setTransactions(data || []);
+  }, [params.id]);
 
   useEffect(() => {
     const fetchWalletData = async () => {
@@ -29,39 +67,7 @@ export default function WalletDetails({ params }: { params: { id: string } }) {
     };
 
     fetchWalletData();
-  }, [params.id]);
-
-  const fetchWallet = async () => {
-    const { data, error } = await supabase
-      .from('wallets')
-      .select('*')
-      .eq('id', params.id)
-      .single();
-
-    if (error) {
-      console.error('Error fetching wallet:', error);
-      return;
-    }
-
-    setWallet(data);
-    setWalletName(data.name);
-  };
-
-  const fetchWalletTransactions = async () => {
-    const { data, error } = await supabase
-      .from('transactions')
-      .select('*')
-      .eq('wallet_id', params.id)
-      .order('date', { ascending: false })
-      .limit(10);
-
-    if (error) {
-      console.error('Error fetching transactions:', error);
-      return;
-    }
-
-    setTransactions(data || []);
-  };
+  }, [params.id, fetchWallet, fetchWalletTransactions]);
 
   const handleSaveWallet = async () => {
     if (!wallet || !walletName.trim()) return;
