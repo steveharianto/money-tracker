@@ -19,7 +19,7 @@ export default function LoginPage() {
       const { error } = await login(email, password);
       
       if (error) {
-        setError(error.message || 'Failed to sign in. Please check your credentials.');
+        setError(error.message);
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');

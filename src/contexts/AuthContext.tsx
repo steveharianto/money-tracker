@@ -5,11 +5,15 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Session } from '@supabase/supabase-js';
 import { getSession, signIn, signOut } from '@/lib/auth';
 
+interface AuthError {
+  message: string;
+}
+
 type AuthContextType = {
   session: Session | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<{ error: unknown | null }>;
+  login: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   logout: () => Promise<void>;
 };
 
@@ -69,7 +73,7 @@ export const AuthProvider = ({
       const { data, error } = await signIn(email, password);
       
       if (error) {
-        return { error };
+        return { error: { message: error.message || 'Authentication failed' } };
       }
       
       setSession(data.session);
@@ -77,7 +81,7 @@ export const AuthProvider = ({
       return { error: null };
     } catch (error) {
       console.error('Error signing in:', error);
-      return { error };
+      return { error: { message: 'An unexpected error occurred' } };
     }
   };
 
