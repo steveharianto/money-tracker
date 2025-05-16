@@ -29,11 +29,11 @@ const TotalBalance = () => {
   }, []);
 
   return (
-    <div className="flex justify-center items-center">
+    <div className="flex justify-start items-center">
       {loading ? (
-        <div className="animate-pulse h-12 w-48 bg-gray-200 rounded"></div>
+        <div className="animate-pulse h-16 w-64 bg-gray-100 rounded-md"></div>
       ) : (
-        <p className="text-4xl font-bold">
+        <p className="text-5xl font-bold text-blue-600">
           Rp {totalBalance.toLocaleString('id-ID')}
         </p>
       )}

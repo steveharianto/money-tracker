@@ -59,6 +59,7 @@ const HistoricalBalance = () => {
   const [historicalBalances, setHistoricalBalances] = useState<BalancePoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentBalance, setCurrentBalance] = useState(0);
+  const [chartHeight, setChartHeight] = useState(300);
 
   useEffect(() => {
     fetchTotalBalance();
@@ -216,8 +217,12 @@ const HistoricalBalance = () => {
     setSelectedTimeRange(e.target.value as TimeRangeOption);
   };
 
-  // Calculate the chart height dynamically, but with a minimum size
-  const chartHeight = Math.max(300, Math.min(window.innerHeight * 0.4, 400));
+  // Use a fixed height initially, and calculate dynamically only on client-side
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setChartHeight(Math.max(300, Math.min(window.innerHeight * 0.4, 400)));
+    }
+  }, []);
 
   return (
     <div>

@@ -42,7 +42,7 @@ export default function Home() {
           <span className="text-xs text-gray-500 hidden sm:inline">Alt+N</span>
           <button 
             onClick={() => setShowTransactionForm(true)}
-            className="inline-flex items-center justify-center p-2 border border-transparent rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="inline-flex items-center justify-center p-2 border border-transparent rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 transition-colors duration-150"
             title="Add New Transaction (Alt+N)"
           >
             <Plus className="h-5 w-5" />
@@ -54,9 +54,9 @@ export default function Home() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Left Column - Total Balance and Charts */}
         <div className="lg:col-span-3 space-y-6">
-          {/* Total Balance Card */}
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg rounded-2xl p-6">
-            <div className="flex items-center space-x-2 mb-4">
+          {/* Total Balance Section */}
+          <div className="pb-6 mb-2 border-b border-gray-100">
+            <div className="flex items-center space-x-2 mb-3 text-blue-600">
               <Activity className="h-6 w-6" />
               <h2 className="text-xl font-bold">Total Balance</h2>
             </div>
@@ -64,31 +64,31 @@ export default function Home() {
           </div>
 
           {/* Historical Chart */}
-          <div className="bg-white shadow rounded-xl p-6">
+          <div className="bg-white shadow-sm border border-gray-100 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
-                <TrendingUp className="h-5 w-5 text-indigo-600" />
-                <h2 className="text-lg font-semibold text-gray-900">Balance Trends</h2>
+                <TrendingUp className="h-5 w-5 text-blue-600" />
+                <h2 className="text-lg font-semibold text-gray-800">Balance Trends</h2>
               </div>
             </div>
             <HistoricalBalance />
           </div>
 
           {/* Financial Overview */}
-          <div className="bg-white shadow rounded-xl p-6">
+          <div className="bg-white shadow-sm border border-gray-100 rounded-xl p-6">
             <DashboardCharts />
           </div>
         </div>
 
         {/* Right Column - Wallet Summary */}
         <div className="space-y-6">
-          <div className="bg-white shadow rounded-xl p-6">
+          <div className="bg-white shadow-sm border border-gray-100 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
-                <Wallet className="h-5 w-5 text-indigo-600" />
-                <h2 className="text-lg font-semibold text-gray-900">Wallets</h2>
+                <Wallet className="h-5 w-5 text-blue-600" />
+                <h2 className="text-lg font-semibold text-gray-800">Wallets</h2>
               </div>
-              <Link href="/wallets" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 flex items-center">
+              <Link href="/wallets" className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center transition-colors duration-150">
                 Manage →
               </Link>
             </div>
@@ -99,13 +99,13 @@ export default function Home() {
 
       {/* Transaction Form Modal */}
       {showTransactionForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-medium text-gray-900">Add Transaction</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl border border-gray-100">
+            <div className="flex justify-between items-center mb-5">
+              <h2 className="text-lg font-medium text-gray-800">Add Transaction</h2>
               <button 
                 onClick={() => setShowTransactionForm(false)}
-                className="text-gray-400 hover:text-gray-500"
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
               >
                 ✕
               </button>
