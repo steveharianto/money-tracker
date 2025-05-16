@@ -17,26 +17,7 @@ const TransactionsList = () => {
     categoryId: 'all'
   });
 
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      await Promise.all([
-        fetchTransactions(),
-        fetchCategories(),
-        fetchWallets()
-      ]);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [filter]);
-
-  useEffect(() => {
-    fetchData();
-  }, [filter, fetchData]);
-
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     let query = supabase
       .from('transactions')
       .select('*')
@@ -66,9 +47,9 @@ const TransactionsList = () => {
     
     if (error) throw error;
     setTransactions(data || []);
-  };
+  }, [filter]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     const { data, error } = await supabase
       .from('categories')
       .select('*');
@@ -81,9 +62,9 @@ const TransactionsList = () => {
     });
     
     setCategories(categoriesMap);
-  };
+  }, []);
 
-  const fetchWallets = async () => {
+  const fetchWallets = useCallback(async () => {
     const { data, error } = await supabase
       .from('wallets')
       .select('*');
@@ -96,7 +77,26 @@ const TransactionsList = () => {
     });
     
     setWallets(walletsMap);
-  };
+  }, []);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      await Promise.all([
+        fetchTransactions(),
+        fetchCategories(),
+        fetchWallets()
+      ]);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchTransactions, fetchCategories, fetchWallets]);
+
+  useEffect(() => {
+    fetchData();
+  }, [filter, fetchData]);
 
   const handleDeleteTransaction = async (transaction: Transaction) => {
     try {

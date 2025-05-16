@@ -5,13 +5,15 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase, type Wallet, type Transaction } from '@/lib/supabase';
 
-interface WalletDetailsProps {
-  params: {
-    id: string;
-  }
+interface PageParams {
+  id: string;
 }
 
-export default function WalletDetails({ params }: WalletDetailsProps) {
+export default function WalletDetails({ 
+  params 
+}: { 
+  params: PageParams 
+}) {
   const router = useRouter();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
